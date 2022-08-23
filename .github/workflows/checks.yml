@@ -14,13 +14,24 @@ jobs:
         with:
           deno-version: v1.x
 
-      - name: Run deno fmt
-        run: deno fmt --check
-
       - name: Run deno lint
         run: deno lint --unstable
 
-  test:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Setup latest deno version
+        uses: denoland/setup-deno@main
+        with:
+          deno-version: v1.x
+
+      - name: Run deno fmt
+        run: deno fmt --check
+
+  doc:
     runs-on: ubuntu-latest
     if: ${{ false }}
     steps:
@@ -33,4 +44,18 @@ jobs:
           deno-version: v1.x
 
       - name: Run deno test
-        run: deno test --allow-all --unstable
+        run: deno test --allow-all --unstable --import-map import_map.json
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Setup latest deno version
+        uses: denoland/setup-deno@main
+        with:
+          deno-version: v1.x
+
+      - name: Run deno test --doc
+        run: deno test --allow-all --unstable --doc --import-map import_map.json

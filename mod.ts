@@ -177,9 +177,10 @@ export function buildInternalRoutes<T = unknown>(
 /**
  * A simple and tiny router for deno
  *
+ * @example
  * ```ts
  * import { serve } from "https://deno.land/std/http/server.ts";
- * import { router } from "https://deno.land/x/tiny_router/mod.ts";
+ * import { router } from "https://deno.land/x/rutt/mod.ts";
  *
  * await serve(
  *   router({
