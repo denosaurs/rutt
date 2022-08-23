@@ -1,8 +1,10 @@
 /**
- * @file Rutt is a tiny http router designed for use with deno and deno deploy.
+ * Rutt is a tiny http router designed for use with deno and deno deploy.
  * It is written in about 200 lines of code and is pretty fast, using an
  * extended type of the web-standard {@link URLPattern} to provide fast and
  * easy route matching.
+ *
+ * @module
  */
 
 import type { ConnInfo } from "https://deno.land/std@0.152.0/http/server.ts";
