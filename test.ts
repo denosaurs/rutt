@@ -119,11 +119,11 @@ Deno.test("handlers", async ({ step }) => {
       assertEquals(response.status, 500);
 
       response = await route(
-        new Request("https://example.com/error/message"),
+        new Request("https://example.com/error/message\u2019"),
         TEST_CONN_INFO,
       );
       assert(!response.ok);
-      assertEquals(await response.text(), "message");
+      assertEquals(await response.text(), "message\u2019");
       assertEquals(response.status, 500);
     });
   });
