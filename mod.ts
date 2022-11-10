@@ -224,6 +224,10 @@ export function router<T = unknown>(
           groups = res?.groups ?? {};
         }
 
+        for (const key in groups) {
+          groups[key] = decodeURIComponent(groups[key]);
+        }
+
         if (res !== null) {
           for (const [method, handler] of Object.entries(methods)) {
             if (req.method === method) {
