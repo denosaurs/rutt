@@ -236,3 +236,221 @@ Deno.test("handlers", async ({ step }) => {
     });
   });
 });
+
+Deno.test("nesting", async ({ step }) => {
+  await step("slash", async () => {
+    const route = router({
+      "/": () => new Response(),
+      "/test/": {
+        "/abc": () => new Response(),
+        "/123": () => new Response(),
+      },
+    });
+    let response: Response;
+
+    response = await route(
+      new Request("https://example.com/"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+
+    response = await route(
+      new Request("https://example.com/test"),
+      TEST_CONN_INFO,
+    );
+    assert(!response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 404);
+
+    response = await route(
+      new Request("https://example.com/test/abc"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+
+    response = await route(
+      new Request("https://example.com/test/123"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+  });
+
+  await step("no slash", async () => {
+    const route = router({
+      "": () => new Response(),
+      "test": {
+        "abc": () => new Response(),
+        "123": () => new Response(),
+      },
+    });
+    let response: Response;
+
+    response = await route(
+      new Request("https://example.com/"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+
+    response = await route(
+      new Request("https://example.com/test"),
+      TEST_CONN_INFO,
+    );
+    assert(!response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 404);
+
+    response = await route(
+      new Request("https://example.com/test/abc"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+
+    response = await route(
+      new Request("https://example.com/test/123"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+  });
+
+  await step("parameters", async () => {
+    const route = router({
+      ":test": {
+        "abc": () => new Response(),
+        "123": () => new Response(),
+      },
+    });
+    let response: Response;
+
+    response = await route(
+      new Request("https://example.com/foo"),
+      TEST_CONN_INFO,
+    );
+    assert(!response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 404);
+
+    response = await route(
+      new Request("https://example.com/bar/abc"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+
+    response = await route(
+      new Request("https://example.com/baz/123"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+  });
+
+  await step("nested parent handler", async () => {
+    const route = router({
+      "/test": {
+        "/abc": () => new Response(),
+        "{/}?": () => new Response(),
+      },
+    });
+    let response: Response;
+
+    response = await route(
+      new Request("https://example.com/test/123"),
+      TEST_CONN_INFO,
+    );
+    assert(!response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 404);
+
+    response = await route(
+      new Request("https://example.com/test/abc"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+
+    response = await route(
+      new Request("https://example.com/test/"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+
+    response = await route(
+      new Request("https://example.com/test"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+  });
+});
+
+Deno.test("internal routes", async ({ step }) => {
+  await step("RegExp", async () => {
+    const route = router([
+      {
+        pattern: /^https:\/\/example\.com\/test$/,
+        methods: { "any": () => new Response() },
+      },
+    ]);
+    let response: Response;
+
+    response = await route(
+      new Request("https://example.com/"),
+      TEST_CONN_INFO,
+    );
+    assert(!response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 404);
+
+    response = await route(
+      new Request("https://example.com/test"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+  });
+
+  await step("URLPattern", async () => {
+    const route = router([
+      {
+        pattern: new URLPattern({ pathname: "/test" }),
+        methods: { "any": () => new Response() },
+      },
+    ]);
+    let response: Response;
+
+    response = await route(
+      new Request("https://example.com/"),
+      TEST_CONN_INFO,
+    );
+    assert(!response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 404);
+
+    response = await route(
+      new Request("https://example.com/test"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+  });
+});
