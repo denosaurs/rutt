@@ -149,7 +149,7 @@ export const METHODS = [
 
 const methodRegex = new RegExp(`(?<=^(?:${METHODS.join("|")}))@`);
 
-export function joinPaths(a: string, b: string): string {
+function joinPaths(a: string, b: string): string {
   if (a.endsWith("/")) {
     a = a.slice(0, -1);
   }
