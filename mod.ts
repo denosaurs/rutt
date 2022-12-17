@@ -65,8 +65,6 @@ export interface Routes<T = {}> {
   [key: string]: Routes<T> | MatchHandler<T>;
 }
 
-// Record<string, MatchHandler<T>>;
-
 /**
  * The internal route object contains either a {@link RegExp} pattern or
  * {@link URLPattern} which is matched against the incoming request
