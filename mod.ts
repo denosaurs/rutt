@@ -61,7 +61,9 @@ export type MatchHandler<T = unknown> = (
  * example a route only accepting `GET` requests would look like: `GET@/`.
  */
 // deno-lint-ignore ban-types
-export type Routes<T = {}> = Record<string, MatchHandler<T>>;
+export interface Routes<T = {}> {
+  [key: string]: Routes<T> | MatchHandler<T>;
+}
 
 /**
  * The internal route object contains either a {@link RegExp} pattern or
@@ -145,6 +147,18 @@ export const METHODS = [
 
 const methodRegex = new RegExp(`(?<=^(?:${METHODS.join("|")}))@`);
 
+function joinPaths(a: string, b: string): string {
+  if (a.endsWith("/")) {
+    a = a.slice(0, -1);
+  }
+
+  if (!b.startsWith("/") && !b.startsWith("{/}?")) {
+    b = "/" + b;
+  }
+
+  return a + b;
+}
+
 /**
  * Builds an {@link InternalRoutes} array from a {@link Routes} record.
  *
@@ -153,10 +167,11 @@ const methodRegex = new RegExp(`(?<=^(?:${METHODS.join("|")}))@`);
  */
 export function buildInternalRoutes<T = unknown>(
   routes: Routes<T>,
+  basePath = "/",
 ): InternalRoutes<T> {
   const internalRoutesRecord: Record<
     string,
-    { pattern: URLPattern; methods: Record<string, MatchHandler<T>> }
+    InternalRoute<T>
   > = {};
   for (const [route, handler] of Object.entries(routes)) {
     let [methodOrPath, path] = route.split(methodRegex);
@@ -165,12 +180,23 @@ export function buildInternalRoutes<T = unknown>(
       path = methodOrPath;
       method = "any";
     }
-    const r = internalRoutesRecord[path] ?? {
-      pattern: new URLPattern({ pathname: path }),
-      methods: {},
-    };
-    r.methods[method] = handler;
-    internalRoutesRecord[path] = r;
+
+    path = joinPaths(basePath, path);
+
+    if (typeof handler === "function") {
+      const r = internalRoutesRecord[path] ?? {
+        pattern: new URLPattern({ pathname: path }),
+        methods: {},
+      };
+      r.methods[method] = handler;
+      internalRoutesRecord[path] = r;
+    } else {
+      const subroutes = buildInternalRoutes(handler, path);
+      for (const subroute of subroutes) {
+        internalRoutesRecord[(subroute.pattern as URLPattern).pathname] ??=
+          subroute;
+      }
+    }
   }
 
   return Object.values(internalRoutesRecord);
