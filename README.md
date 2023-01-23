@@ -25,6 +25,7 @@ await serve(
 
 - Elias Sjögreen ([@eliassjogreen](https://github.com/eliassjogreen))
 - Dean Srebnik ([@load1n9](https://github.com/load1n9))
+- Leo Kettmeir ([@crowlKats](https://github.com/crowlKats))
 
 ### Contribution
 
