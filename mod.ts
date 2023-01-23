@@ -7,7 +7,7 @@
  * @module
  */
 
-import type { ConnInfo } from "https://deno.land/std@0.152.0/http/server.ts";
+import type { ConnInfo } from "https://deno.land/std@0.173.0/http/server.ts";
 
 /**
  * Provides arbitrary context to {@link Handler} functions along with

@@ -1,9 +1,9 @@
-import type { ConnInfo } from "https://deno.land/std@0.152.0/http/server.ts";
+import type { ConnInfo } from "https://deno.land/std@0.173.0/http/server.ts";
 import {
   assert,
   assertEquals,
   assertIsError,
-} from "https://deno.land/std@0.152.0/testing/asserts.ts";
+} from "https://deno.land/std@0.173.0/testing/asserts.ts";
 import { METHODS, router } from "./mod.ts";
 
 const TEST_CONN_INFO: ConnInfo = {
