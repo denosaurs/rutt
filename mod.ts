@@ -40,7 +40,7 @@ export type ErrorHandler<T = unknown> = (
 export type UnknownMethodHandler<T = unknown> = (
   req: Request,
   ctx: HandlerContext<T>,
-  knownMethods: string[],
+  knownMethods: KnownMethod[],
 ) => Response | Promise<Response>;
 
 /**
@@ -89,6 +89,45 @@ export type InternalRoute<T = {}> = {
 export type InternalRoutes<T = {}> = InternalRoute<T>[];
 
 /**
+ * Additional options for the {@link router} function.
+ */
+export interface RouterOptions<T> {
+  /**
+   * An optional property which contains a handler for anything that doesn't
+   * match the `routes` parameter
+   */
+  otherHandler?: Handler<T>;
+  /**
+   * An optional property which contains a handler for any time it fails to run
+   * the default request handling code
+   */
+  errorHandler?: ErrorHandler<T>;
+  /**
+   * An optional property which contains a handler for any time a method that
+   * is not defined is used
+   */
+  unknownMethodHandler?: UnknownMethodHandler<T>;
+}
+
+/**
+ * A known HTTP method.
+ */
+export type KnownMethod = typeof KnownMethods[number];
+
+/**
+ * All known HTTP methods.
+ */
+export const KnownMethods = [
+  "GET",
+  "HEAD",
+  "POST",
+  "PUT",
+  "DELETE",
+  "OPTIONS",
+  "PATCH",
+] as const;
+
+/**
  * The default other handler for the router. By default it responds with `null`
  * body and a status of 404.
  */
@@ -117,12 +156,12 @@ export function defaultErrorHandler(
 /**
  * The default unknown method handler for the router. By default it responds
  * with `null` body, a status of 405 and the `Accept` header set to all
- * {@link METHODS known methods}.
+ * {@link KnownMethods known methods}.
  */
 export function defaultUnknownMethodHandler(
   _req: Request,
   _ctx: HandlerContext,
-  knownMethods: string[],
+  knownMethods: KnownMethod[],
 ): Response {
   return new Response(null, {
     status: 405,
@@ -132,20 +171,7 @@ export function defaultUnknownMethodHandler(
   });
 }
 
-/**
- * All known HTTP methods.
- */
-export const METHODS = [
-  "GET",
-  "HEAD",
-  "POST",
-  "PUT",
-  "DELETE",
-  "OPTIONS",
-  "PATCH",
-] as const;
-
-const methodRegex = new RegExp(`(?<=^(?:${METHODS.join("|")}))@`);
+const knownMethodRegex = new RegExp(`(?<=^(?:${KnownMethods.join("|")}))@`);
 
 function joinPaths(a: string, b: string): string {
   if (a.endsWith("/")) {
@@ -171,7 +197,7 @@ export function buildInternalRoutes<T = unknown>(
 ): InternalRoutes<T> {
   const internalRoutesRecord: Record<string, InternalRoute<T>> = {};
   for (const [route, handler] of Object.entries(routes)) {
-    let [methodOrPath, path] = route.split(methodRegex);
+    let [methodOrPath, path] = route.split(knownMethodRegex);
     let method = methodOrPath;
     if (!path) {
       path = methodOrPath;
@@ -197,24 +223,6 @@ export function buildInternalRoutes<T = unknown>(
   }
 
   return Object.values(internalRoutesRecord);
-}
-
-interface RouterOptions<T> {
-  /**
-   * An optional property which contains a handler for anything that doesn't
-   * match the `routes` parameter
-   */
-  otherHandler?: Handler<T>;
-  /**
-   * An optional property which contains a handler for any time it fails to run
-   * the default request handling code
-   */
-  errorHandler?: ErrorHandler<T>;
-  /**
-   * An optional property which contains a handler for any time a method that
-   * is not defined is used
-   */
-  unknownMethodHandler?: UnknownMethodHandler<T>;
 }
 
 /**
@@ -255,16 +263,10 @@ export function router<T = unknown>(
   return async (req, ctx) => {
     try {
       for (const { pattern, methods } of internalRoutes) {
-        let res: URLPatternResult | RegExpExecArray | null;
-        let groups: Record<string, string>;
-
-        if (pattern instanceof URLPattern) {
-          res = pattern.exec(req.url);
-          groups = res?.pathname.groups ?? {};
-        } else {
-          res = pattern.exec(req.url);
-          groups = res?.groups ?? {};
-        }
+        const res = pattern.exec(req.url);
+        const groups = (pattern instanceof URLPattern
+          ? (res as URLPatternResult | null)?.pathname.groups
+          : (res as RegExpExecArray | null)?.groups) ?? {};
 
         for (const key in groups) {
           groups[key] = decodeURIComponent(groups[key]);
@@ -280,7 +282,11 @@ export function router<T = unknown>(
           if (methods["any"]) {
             return await methods["any"](req, ctx, groups);
           } else {
-            return await unknownMethodHandler!(req, ctx, Object.keys(methods));
+            return await unknownMethodHandler!(
+              req,
+              ctx,
+              Object.keys(methods) as KnownMethod[],
+            );
           }
         }
       }
