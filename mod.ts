@@ -1,13 +1,13 @@
 /**
  * Rutt is a tiny http router designed for use with deno and deno deploy.
- * It is written in about 200 lines of code and is pretty fast, using an
+ * It is written in about 300 lines of code and is fast enough, using an
  * extended type of the web-standard {@link URLPattern} to provide fast and
  * easy route matching.
  *
  * @module
  */
 
-import type { ConnInfo } from "https://deno.land/std@0.173.0/http/server.ts";
+import type { ConnInfo } from "https://deno.land/std@0.177.0/http/server.ts";
 
 /**
  * Provides arbitrary context to {@link Handler} functions along with
@@ -169,10 +169,7 @@ export function buildInternalRoutes<T = unknown>(
   routes: Routes<T>,
   basePath = "/",
 ): InternalRoutes<T> {
-  const internalRoutesRecord: Record<
-    string,
-    InternalRoute<T>
-  > = {};
+  const internalRoutesRecord: Record<string, InternalRoute<T>> = {};
   for (const [route, handler] of Object.entries(routes)) {
     let [methodOrPath, path] = route.split(methodRegex);
     let method = methodOrPath;
@@ -202,6 +199,24 @@ export function buildInternalRoutes<T = unknown>(
   return Object.values(internalRoutesRecord);
 }
 
+interface RouterOptions<T> {
+  /**
+   * An optional property which contains a handler for anything that doesn't
+   * match the `routes` parameter
+   */
+  otherHandler?: Handler<T>;
+  /**
+   * An optional property which contains a handler for any time it fails to run
+   * the default request handling code
+   */
+  errorHandler?: ErrorHandler<T>;
+  /**
+   * An optional property which contains a handler for any time a method that
+   * is not defined is used
+   */
+  unknownMethodHandler?: UnknownMethodHandler<T>;
+}
+
 /**
  * A simple and tiny router for deno
  *
@@ -218,20 +233,21 @@ export function buildInternalRoutes<T = unknown>(
  * ```
  *
  * @param routes A record of all routes and their corresponding handler functions
- * @param other An optional parameter which contains a handler for anything that
- * doesn't match the `routes` parameter
- * @param error An optional parameter which contains a handler for any time it
- * fails to run the default request handling code
- * @param unknownMethod An optional parameter which contains a handler for any
- * time a method that is not defined is used
+ * @param options An object containing all of the possible configuration options
  * @returns A deno std compatible request handler
  */
 export function router<T = unknown>(
   routes: Routes<T> | InternalRoutes<T>,
-  other: Handler<T> = defaultOtherHandler,
-  error: ErrorHandler<T> = defaultErrorHandler,
-  unknownMethod: UnknownMethodHandler<T> = defaultUnknownMethodHandler,
+  { otherHandler, errorHandler, unknownMethodHandler }: RouterOptions<T> = {
+    otherHandler: defaultOtherHandler,
+    errorHandler: defaultErrorHandler,
+    unknownMethodHandler: defaultUnknownMethodHandler,
+  },
 ): Handler<T> {
+  otherHandler ??= defaultOtherHandler;
+  errorHandler ??= defaultErrorHandler;
+  unknownMethodHandler ??= defaultUnknownMethodHandler;
+
   const internalRoutes = Array.isArray(routes)
     ? routes
     : buildInternalRoutes(routes);
@@ -257,33 +273,21 @@ export function router<T = unknown>(
         if (res !== null) {
           for (const [method, handler] of Object.entries(methods)) {
             if (req.method === method) {
-              return await handler(
-                req,
-                ctx,
-                groups,
-              );
+              return await handler(req, ctx, groups);
             }
           }
 
           if (methods["any"]) {
-            return await methods["any"](
-              req,
-              ctx,
-              groups,
-            );
+            return await methods["any"](req, ctx, groups);
           } else {
-            return await unknownMethod(
-              req,
-              ctx,
-              Object.keys(methods),
-            );
+            return await unknownMethodHandler!(req, ctx, Object.keys(methods));
           }
         }
       }
 
-      return await other(req, ctx);
+      return await otherHandler!(req, ctx);
     } catch (err) {
-      return error(req, ctx, err);
+      return errorHandler!(req, ctx, err);
     }
   };
 }

@@ -1,9 +1,9 @@
-import type { ConnInfo } from "https://deno.land/std@0.173.0/http/server.ts";
+import type { ConnInfo } from "https://deno.land/std@0.177.0/http/server.ts";
 import {
   assert,
   assertEquals,
   assertIsError,
-} from "https://deno.land/std@0.173.0/testing/asserts.ts";
+} from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import { METHODS, router } from "./mod.ts";
 
 const TEST_CONN_INFO: ConnInfo = {
@@ -45,13 +45,18 @@ Deno.test("handlers", async ({ step }) => {
     });
 
     await step("custom", async () => {
-      const route = router({
-        "/test": () => new Response(),
-      }, () => {
-        return new Response("test", {
-          status: 418,
-        });
-      });
+      const route = router(
+        {
+          "/test": () => new Response(),
+        },
+        {
+          otherHandler: () => {
+            return new Response("test", {
+              status: 418,
+            });
+          },
+        },
+      );
       let response: Response;
 
       response = await route(
@@ -99,13 +104,14 @@ Deno.test("handlers", async ({ step }) => {
             throw new Error("error");
           },
         },
-        undefined,
-        (_req, _ctx, err) => {
-          assertIsError(err);
+        {
+          errorHandler: (_req, _ctx, err) => {
+            assertIsError(err);
 
-          return new Response(err.message, {
-            status: 500,
-          });
+            return new Response(err.message, {
+              status: 500,
+            });
+          },
         },
       );
       let response: Response;
@@ -172,35 +178,32 @@ Deno.test("handlers", async ({ step }) => {
           "GET@/test": () => new Response(),
           "PATCH@/test": () => new Response(),
         },
-        undefined,
-        undefined,
-        (_req, _ctx, knownMethods) => {
-          assert(Array.isArray(knownMethods));
-          assert(
-            knownMethods.every((
-              method,
-            ) =>
-              METHODS.includes(
-                method as (
-                  | "GET"
-                  | "HEAD"
-                  | "POST"
-                  | "PUT"
-                  | "DELETE"
-                  | "OPTIONS"
-                  | "PATCH"
-                ),
-              )
-            ),
-          );
-          assertEquals(knownMethods, ["GET", "PATCH"]);
+        {
+          unknownMethodHandler: (_req, _ctx, knownMethods) => {
+            assert(Array.isArray(knownMethods));
+            assert(
+              knownMethods.every((method) =>
+                METHODS.includes(
+                  method as
+                    | "GET"
+                    | "HEAD"
+                    | "POST"
+                    | "PUT"
+                    | "DELETE"
+                    | "OPTIONS"
+                    | "PATCH",
+                )
+              ),
+            );
+            assertEquals(knownMethods, ["GET", "PATCH"]);
 
-          return new Response("unknown method", {
-            status: 405,
-            headers: {
-              Accept: knownMethods.join(", "),
-            },
-          });
+            return new Response("unknown method", {
+              status: 405,
+              headers: {
+                Accept: knownMethods.join(", "),
+              },
+            });
+          },
         },
       );
       let response: Response;
@@ -248,10 +251,7 @@ Deno.test("nesting", async ({ step }) => {
     });
     let response: Response;
 
-    response = await route(
-      new Request("https://example.com/"),
-      TEST_CONN_INFO,
-    );
+    response = await route(new Request("https://example.com/"), TEST_CONN_INFO);
     assert(response.ok);
     assertEquals(response.body, null);
     assertEquals(response.status, 200);
@@ -284,17 +284,14 @@ Deno.test("nesting", async ({ step }) => {
   await step("no slash", async () => {
     const route = router({
       "": () => new Response(),
-      "test": {
-        "abc": () => new Response(),
+      test: {
+        abc: () => new Response(),
         "123": () => new Response(),
       },
     });
     let response: Response;
 
-    response = await route(
-      new Request("https://example.com/"),
-      TEST_CONN_INFO,
-    );
+    response = await route(new Request("https://example.com/"), TEST_CONN_INFO);
     assert(response.ok);
     assertEquals(response.body, null);
     assertEquals(response.status, 200);
@@ -327,7 +324,7 @@ Deno.test("nesting", async ({ step }) => {
   await step("parameters", async () => {
     const route = router({
       ":test": {
-        "abc": () => new Response(),
+        abc: () => new Response(),
         "123": () => new Response(),
       },
     });
@@ -399,6 +396,126 @@ Deno.test("nesting", async ({ step }) => {
     assertEquals(response.body, null);
     assertEquals(response.status, 200);
   });
+
+  await step("methods shallow", async () => {
+    const route = router({
+      "/": () => new Response(),
+      "/test/": {
+        "GET@/abc": () => new Response("1"),
+        "POST@/abc": () => new Response("2"),
+        "DELETE@{/}?": () => new Response(),
+      },
+    });
+    let response: Response;
+
+    response = await route(new Request("https://example.com/"), TEST_CONN_INFO);
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+
+    response = await route(
+      new Request("https://example.com/test"),
+      TEST_CONN_INFO,
+    );
+    assert(!response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 405);
+    assertEquals(response.headers.get("Accept"), "DELETE");
+
+    response = await route(
+      new Request("https://example.com/test/", { method: "DELETE" }),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.status, 200);
+    assertEquals(response.body, null);
+
+    response = await route(
+      new Request("https://example.com/test/abc", { method: "DELETE" }),
+      TEST_CONN_INFO,
+    );
+    assert(!response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 405);
+    assertEquals(response.headers.get("Accept"), "GET, POST");
+
+    response = await route(
+      new Request("https://example.com/test/abc"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.status, 200);
+    assertEquals(await response.text(), "1");
+
+    response = await route(
+      new Request("https://example.com/test/abc", { method: "POST" }),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.status, 200);
+    assertEquals(await response.text(), "2");
+  });
+
+  await step("methods deep", async () => {
+    const route = router({
+      "/": () => new Response(),
+      "/test/": {
+        "/abc/": {
+          "GET@/def": () => new Response("1"),
+          "POST@/def": () => new Response("2"),
+          "DELETE@{/}?": () => new Response(),
+        },
+      },
+    });
+    let response: Response;
+
+    response = await route(new Request("https://example.com/"), TEST_CONN_INFO);
+    assert(response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 200);
+
+    response = await route(
+      new Request("https://example.com/test/abc/"),
+      TEST_CONN_INFO,
+    );
+    assert(!response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 405);
+    assertEquals(response.headers.get("Accept"), "DELETE");
+
+    response = await route(
+      new Request("https://example.com/test/abc/", { method: "DELETE" }),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.status, 200);
+    assertEquals(response.body, null);
+
+    response = await route(
+      new Request("https://example.com/test/abc/def", { method: "DELETE" }),
+      TEST_CONN_INFO,
+    );
+    assert(!response.ok);
+    assertEquals(response.body, null);
+    assertEquals(response.status, 405);
+    assertEquals(response.headers.get("Accept"), "GET, POST");
+
+    response = await route(
+      new Request("https://example.com/test/abc/def"),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.status, 200);
+    assertEquals(await response.text(), "1");
+
+    response = await route(
+      new Request("https://example.com/test/abc/def", { method: "POST" }),
+      TEST_CONN_INFO,
+    );
+    assert(response.ok);
+    assertEquals(response.status, 200);
+    assertEquals(await response.text(), "2");
+  });
 });
 
 Deno.test("internal routes", async ({ step }) => {
@@ -406,15 +523,12 @@ Deno.test("internal routes", async ({ step }) => {
     const route = router([
       {
         pattern: /^https:\/\/example\.com\/test$/,
-        methods: { "any": () => new Response() },
+        methods: { any: () => new Response() },
       },
     ]);
     let response: Response;
 
-    response = await route(
-      new Request("https://example.com/"),
-      TEST_CONN_INFO,
-    );
+    response = await route(new Request("https://example.com/"), TEST_CONN_INFO);
     assert(!response.ok);
     assertEquals(response.body, null);
     assertEquals(response.status, 404);
@@ -432,15 +546,12 @@ Deno.test("internal routes", async ({ step }) => {
     const route = router([
       {
         pattern: new URLPattern({ pathname: "/test" }),
-        methods: { "any": () => new Response() },
+        methods: { any: () => new Response() },
       },
     ]);
     let response: Response;
 
-    response = await route(
-      new Request("https://example.com/"),
-      TEST_CONN_INFO,
-    );
+    response = await route(new Request("https://example.com/"), TEST_CONN_INFO);
     assert(!response.ok);
     assertEquals(response.body, null);
     assertEquals(response.status, 404);
