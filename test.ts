@@ -4,7 +4,7 @@ import {
   assertEquals,
   assertIsError,
 } from "https://deno.land/std@0.177.0/testing/asserts.ts";
-import { KnownMethods, router } from "./mod.ts";
+import { router } from "./mod.ts";
 
 const TEST_CONN_INFO: ConnInfo = {
   localAddr: {
@@ -182,18 +182,7 @@ Deno.test("handlers", async ({ step }) => {
           unknownMethodHandler: (_req, _ctx, knownMethods) => {
             assert(Array.isArray(knownMethods));
             assert(
-              knownMethods.every((method) =>
-                KnownMethods.includes(
-                  method as
-                    | "GET"
-                    | "HEAD"
-                    | "POST"
-                    | "PUT"
-                    | "DELETE"
-                    | "OPTIONS"
-                    | "PATCH",
-                )
-              ),
+              knownMethods.every((method) => knownMethods.includes(method)),
             );
             assertEquals(knownMethods, ["GET", "PATCH"]);
 

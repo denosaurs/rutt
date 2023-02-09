@@ -112,12 +112,12 @@ export interface RouterOptions<T> {
 /**
  * A known HTTP method.
  */
-export type KnownMethod = typeof KnownMethods[number];
+export type KnownMethod = typeof knownMethods[number];
 
 /**
  * All known HTTP methods.
  */
-export const KnownMethods = [
+export const knownMethods = [
   "GET",
   "HEAD",
   "POST",
@@ -171,7 +171,7 @@ export function defaultUnknownMethodHandler(
   });
 }
 
-const knownMethodRegex = new RegExp(`(?<=^(?:${KnownMethods.join("|")}))@`);
+const knownMethodRegex = new RegExp(`(?<=^(?:${knownMethods.join("|")}))@`);
 
 function joinPaths(a: string, b: string): string {
   if (a.endsWith("/")) {
