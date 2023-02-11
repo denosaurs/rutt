@@ -3,6 +3,7 @@ import { router } from "https://deno.land/x/rutt/mod.ts";
 
 await serve(
   router({
-    "/": (_req) => new Response("Hello world!", { status: 200 }),
+    "/hello/:name": (_req, _, { name }) =>
+      new Response(`Hello ${name}`, { status: 200 }),
   }),
 );

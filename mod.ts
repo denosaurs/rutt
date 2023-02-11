@@ -4,6 +4,18 @@
  * extended type of the web-standard {@link URLPattern} to provide fast and
  * easy route matching.
  *
+ * @example
+ * ```ts
+ * import { serve } from "https://deno.land/std/http/server.ts";
+ * import { router } from "https://deno.land/x/rutt/mod.ts";
+ *
+ * await serve(
+ *   router({
+ *     "/": (_req) => new Response("Hello world!", { status: 200 }),
+ *   }),
+ * );
+ * ```
+ *
  * @module
  */
 
@@ -156,7 +168,7 @@ export function defaultErrorHandler(
 /**
  * The default unknown method handler for the router. By default it responds
  * with `null` body, a status of 405 and the `Accept` header set to all
- * {@link KnownMethods known methods}.
+ * {@link KnownMethod known methods}.
  */
 export function defaultUnknownMethodHandler(
   _req: Request,
@@ -226,7 +238,9 @@ export function buildInternalRoutes<T = unknown>(
 }
 
 /**
- * A simple and tiny router for deno
+ * A simple and tiny router for deno. This function provides a way of
+ * constructing a HTTP request handler for the provided {@link routes} and any
+ * provided {@link RouterOptions}.
  *
  * @example
  * ```ts
