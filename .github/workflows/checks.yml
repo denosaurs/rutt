@@ -15,7 +15,7 @@ jobs:
           deno-version: v1.x
 
       - name: Run deno lint
-        run: deno lint --unstable
+        run: deno lint
 
   fmt:
     runs-on: ubuntu-latest
@@ -43,7 +43,7 @@ jobs:
           deno-version: v1.x
 
       - name: Run deno test
-        run: deno test --allow-all --unstable --import-map import_map.json
+        run: deno test
 
   doc:
     runs-on: ubuntu-latest
@@ -57,4 +57,4 @@ jobs:
           deno-version: v1.x
 
       - name: Run deno test --doc
-        run: deno test --allow-all --unstable --doc --import-map import_map.json
+        run: deno test --doc

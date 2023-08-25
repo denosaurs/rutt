@@ -1,17 +1,11 @@
-import type { ConnInfo } from "https://deno.land/std@0.177.0/http/server.ts";
 import {
   assert,
   assertEquals,
   assertIsError,
-} from "https://deno.land/std@0.177.0/testing/asserts.ts";
+} from "https://deno.land/std@0.200.0/assert/mod.ts";
 import { router } from "./mod.ts";
 
-const TEST_CONN_INFO: ConnInfo = {
-  localAddr: {
-    transport: "tcp",
-    hostname: "test",
-    port: 80,
-  },
+const TEST_CONN_INFO: Deno.ServeHandlerInfo = {
   remoteAddr: {
     transport: "tcp",
     hostname: "test",

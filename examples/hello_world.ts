@@ -1,8 +1,7 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { router } from "https://deno.land/x/rutt/mod.ts";
 
-await serve(
+await Deno.serve(
   router({
     "/": (_req) => new Response("Hello world!", { status: 200 }),
   }),
-);
+).finished;
