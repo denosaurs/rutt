@@ -6,26 +6,23 @@
  *
  * @example
  * ```ts
- * import { serve } from "https://deno.land/std/http/server.ts";
  * import { router } from "https://deno.land/x/rutt/mod.ts";
  *
- * await serve(
+ * await Deno.serve(
  *   router({
  *     "/": (_req) => new Response("Hello world!", { status: 200 }),
  *   }),
- * );
+ * ).finished;
  * ```
  *
  * @module
  */
 
-import type { ConnInfo } from "https://deno.land/std@0.177.0/http/server.ts";
-
 /**
  * Provides arbitrary context to {@link Handler} functions along with
  * {@link ConnInfo connection information}.
  */
-export type HandlerContext<T = unknown> = T & ConnInfo;
+export type HandlerContext<T = unknown> = T & Deno.ServeHandlerInfo;
 
 /**
  * A handler for HTTP requests. Consumes a request and {@link HandlerContext}
@@ -124,7 +121,7 @@ export interface RouterOptions<T> {
 /**
  * A known HTTP method.
  */
-export type KnownMethod = typeof knownMethods[number];
+export type KnownMethod = (typeof knownMethods)[number];
 
 /**
  * All known HTTP methods.
@@ -244,14 +241,13 @@ export function buildInternalRoutes<T = unknown>(
  *
  * @example
  * ```ts
- * import { serve } from "https://deno.land/std/http/server.ts";
  * import { router } from "https://deno.land/x/rutt/mod.ts";
  *
- * await serve(
+ * await Deno.serve(
  *   router({
  *     "/": (_req) => new Response("Hello world!", { status: 200 }),
  *   }),
- * );
+ * ).finished;
  * ```
  *
  * @param routes A record of all routes and their corresponding handler functions
@@ -279,7 +275,9 @@ export function router<T = unknown>(
       for (const { pattern, methods } of internalRoutes) {
         const res = pattern.exec(req.url);
         const groups = (pattern instanceof URLPattern
-          ? (res as URLPatternResult | null)?.pathname.groups
+          ? ((res as URLPatternResult | null)?.pathname.groups as
+            | Record<string, string>
+            | undefined)
           : (res as RegExpExecArray | null)?.groups) ?? {};
 
         for (const key in groups) {
