@@ -56,35 +56,35 @@ simpleRouter({
   },
 });
 
-Deno.test("typesafety - Split", ({ step }) => {
-  step("given empty string, should return empty array", () => {
+Deno.test("typesafety - Split", async ({ step }) => {
+  await step("given empty string, should return empty array", () => {
     Types.assertType<Types.IsExact<Split<"", "">, []>>(true);
     Types.assertType<Types.IsExact<Split<"", " ">, []>>(true);
     Types.assertType<Types.IsExact<Split<"", "/">, []>>(true);
   });
-  step(
+  await step(
     "given exact string to split character, should return one result",
     () => {
       Types.assertType<Types.IsExact<Split<" ", " ">, [""]>>(true);
       Types.assertType<Types.IsExact<Split<"/", "/">, [""]>>(true);
     },
   );
-  step("given prefixed split character, should return the prefix", () => {
+  await step("given prefixed split character, should return the prefix", () => {
     Types.assertType<Types.IsExact<Split<"a ", " ">, ["a"]>>(true);
     Types.assertType<Types.IsExact<Split<"b/", "/">, ["b"]>>(true);
   });
-  step("given suffixed split character, should return 2 results", () => {
+  await step("given suffixed split character, should return 2 results", () => {
     Types.assertType<Types.IsExact<Split<" a", " ">, ["", "a"]>>(true);
     Types.assertType<Types.IsExact<Split<"/b", "/">, ["", "b"]>>(true);
   });
-  step("given pathname should return array of defined strings", () => {
+  await step("given pathname should return array of defined strings", () => {
     type Param = "/this/is/test";
     type Expected = ["", "this", "is", "test"];
     type Result = Split<Param, "/">;
 
     Types.assertType<Types.IsExact<Result, Expected>>(true);
   });
-  step(
+  await step(
     "should split string into array of defined strings and preserve special characters",
     () => {
       type Param = "/this/is/test/:id/:item/:id/something/asd/asd/asd";
@@ -108,8 +108,8 @@ Deno.test("typesafety - Split", ({ step }) => {
   );
 });
 
-Deno.test("typesafety - FilterAndTrimPathParamsToStringUnion", ({ step }) => {
-  step("given empty array, should return empty union (never)", () => {
+Deno.test("typesafety - FilterAndTrimPathParamsToStringUnion", async ({ step }) => {
+  await step("given empty array, should return empty union (never)", () => {
     Types.assertType<
       Types.IsExact<FilterAndTrimPathParamsToStringUnion<[], "">, never>
     >(true);
@@ -123,27 +123,33 @@ Deno.test("typesafety - FilterAndTrimPathParamsToStringUnion", ({ step }) => {
       Types.IsExact<FilterAndTrimPathParamsToStringUnion<[], ":">, never>
     >(true);
   });
-  step("given array without match, should return empty union (never)", () => {
-    Types.assertType<
-      Types.IsExact<FilterAndTrimPathParamsToStringUnion<[""], "">, never>
-    >(true);
-    Types.assertType<
-      Types.IsExact<
-        FilterAndTrimPathParamsToStringUnion<["", "id", "asd", ""], " ">,
-        never
-      >
-    >(true);
-    Types.assertType<
-      Types.IsExact<
-        FilterAndTrimPathParamsToStringUnion<["something"], "/">,
-        never
-      >
-    >(true);
-    Types.assertType<
-      Types.IsExact<FilterAndTrimPathParamsToStringUnion<["aaaa"], ":">, never>
-    >(true);
-  });
-  step(
+  await step(
+    "given array without match, should return empty union (never)",
+    () => {
+      Types.assertType<
+        Types.IsExact<FilterAndTrimPathParamsToStringUnion<[""], "">, never>
+      >(true);
+      Types.assertType<
+        Types.IsExact<
+          FilterAndTrimPathParamsToStringUnion<["", "id", "asd", ""], " ">,
+          never
+        >
+      >(true);
+      Types.assertType<
+        Types.IsExact<
+          FilterAndTrimPathParamsToStringUnion<["something"], "/">,
+          never
+        >
+      >(true);
+      Types.assertType<
+        Types.IsExact<
+          FilterAndTrimPathParamsToStringUnion<["aaaa"], ":">,
+          never
+        >
+      >(true);
+    },
+  );
+  await step(
     "given array with matches, should return union of matches without the prefix",
     () => {
       Types.assertType<
@@ -166,7 +172,7 @@ Deno.test("typesafety - FilterAndTrimPathParamsToStringUnion", ({ step }) => {
       >(true);
     },
   );
-  step(
+  await step(
     "given array with duplicated matches, should return union of matches without the prefix and duplicates",
     () => {
       Types.assertType<
@@ -191,34 +197,37 @@ Deno.test("typesafety - FilterAndTrimPathParamsToStringUnion", ({ step }) => {
   );
 });
 
-Deno.test("typesafety - ExtractPathMatch", ({ step }) => {
-  step("given path without params, should return Record<never, string>", () => {
-    Types.assertType<
-      Types.IsExact<
-        ExtractPathMatch<
-          "/"
-        >,
-        Record<never, string>
-      >
-    >(true);
-    Types.assertType<
-      Types.IsExact<
-        ExtractPathMatch<
-          "/home"
-        >,
-        Record<never, string>
-      >
-    >(true);
-    Types.assertType<
-      Types.IsExact<
-        ExtractPathMatch<
-          "/api/v1/user"
-        >,
-        Record<never, string>
-      >
-    >(true);
-  });
-  step(
+Deno.test("typesafety - ExtractPathMatch", async ({ step }) => {
+  await step(
+    "given path without params, should return Record<never, string>",
+    () => {
+      Types.assertType<
+        Types.IsExact<
+          ExtractPathMatch<
+            "/"
+          >,
+          Record<never, string>
+        >
+      >(true);
+      Types.assertType<
+        Types.IsExact<
+          ExtractPathMatch<
+            "/home"
+          >,
+          Record<never, string>
+        >
+      >(true);
+      Types.assertType<
+        Types.IsExact<
+          ExtractPathMatch<
+            "/api/v1/user"
+          >,
+          Record<never, string>
+        >
+      >(true);
+    },
+  );
+  await step(
     "given path with params, should return record with params as keys",
     () => {
       Types.assertType<
@@ -249,8 +258,8 @@ Deno.test("typesafety - ExtractPathMatch", ({ step }) => {
   );
 });
 
-Deno.test("typesafety - HandlerContext", ({ step }) => {
-  step(
+Deno.test("typesafety - HandlerContext", async ({ step }) => {
+  await step(
     "given, should expose HandlerContextBase members",
     () => {
       Types.assertType<
@@ -263,7 +272,7 @@ Deno.test("typesafety - HandlerContext", ({ step }) => {
       >(true);
     },
   );
-  step(
+  await step(
     "given HandlerContextBase, should expose HandlerContextBase members",
     () => {
       Types.assertType<
@@ -276,7 +285,7 @@ Deno.test("typesafety - HandlerContext", ({ step }) => {
       >(true);
     },
   );
-  step(
+  await step(
     `given { something: number }, should expose HandlerContextBase members and the passed object member`,
     () => {
       type Given = {
@@ -295,8 +304,8 @@ Deno.test("typesafety - HandlerContext", ({ step }) => {
   );
 });
 
-Deno.test("typesafety - MatchHandler", ({ step }) => {
-  step(
+Deno.test("typesafety - MatchHandler", async ({ step }) => {
+  await step(
     `given "/" as route, should be empty on match`,
     () => {
       type Result = MatchHandler<
@@ -325,7 +334,7 @@ Deno.test("typesafety - MatchHandler", ({ step }) => {
       >(true);
     },
   );
-  step(
+  await step(
     `given "/home/:path/something/else/:view" as route, should expose path and view as params`,
     () => {
       type Result = MatchHandler<

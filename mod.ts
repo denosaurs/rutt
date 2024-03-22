@@ -20,7 +20,7 @@
 
 // deno-lint-ignore no-explicit-any
 export type TemplateWildcard = any;
-
+type EmptyObject = Record<never, never>;
 export type RoutePath = string; // number | symbol | ;
 export type UnknownRouteNesting = Record<string, unknown>;
 
@@ -338,7 +338,8 @@ export function buildInternalRoutes<
     string,
     InternalRoute<ExtractPathMatch<RoutePath>, HandlerContextExtra>
   > = {};
-  for (const [route, handler] of Object.entries(routes)) {
+  for (const [_route, handler] of Object.entries(routes)) {
+    const route = _route as keyof BaseRoutes & string;
     let [methodOrPath, path] = route.split(knownMethodRegex);
     let method = methodOrPath;
     if (!path) {
@@ -356,14 +357,13 @@ export function buildInternalRoutes<
       r.methods[method] = handler;
       internalRoutesRecord[path] = r;
     } else {
-      const subroutes = buildInternalRoutes(
-        // handler as Routes<
-        //   Record<string, unknown>,
-        //   HandlerContextExtra,
-        //   RoutePath
-        // >,
+      const subroutes = buildInternalRoutes<
+        RoutePath,
+        BaseRoutes,
+        HandlerContextExtra
+      >(
         handler as any,
-        path,
+        path as RoutePath,
       );
       for (const subroute of subroutes) {
         internalRoutesRecord[(subroute.pattern as URLPattern).pathname] ??=
@@ -399,7 +399,7 @@ export function router<
   R extends Routes<R, HandlerContextExtra, "", "">,
   HandlerContextExtra extends HandlerContextBase,
 >(
-  routes: R | InternalRoutes<never, HandlerContextExtra>,
+  routes: R | InternalRoutes<EmptyObject, HandlerContextExtra>,
   { otherHandler, errorHandler, unknownMethodHandler }: RouterOptions<
     HandlerContextExtra
   > = {
@@ -412,9 +412,11 @@ export function router<
   errorHandler ??= defaultErrorHandler;
   unknownMethodHandler ??= defaultUnknownMethodHandler;
 
-  const internalRoutes = Array.isArray(routes)
-    ? routes
-    : buildInternalRoutes(routes, "/");
+  const internalRoutes = Array.isArray(routes) ? routes : buildInternalRoutes<
+    "/",
+    R,
+    HandlerContextExtra
+  >(routes, "/");
 
   return async (req, ctx) => {
     try {
