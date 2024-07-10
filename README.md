@@ -7,7 +7,7 @@ the web-standard
 provide fast and easy route matching.
 
 ```ts
-import { router } from "https://deno.land/x/rutt/mod.ts";
+import { router } from "jsr:@denosaurs/rutt";
 
 await Deno.serve(
   router({
@@ -33,4 +33,4 @@ Pull request, issues and feedback are very welcome. Code style is formatted with
 
 ### Licence
 
-Copyright 2022-2023, the denosaurs team. All rights reserved. MIT license.
+Copyright 2022-2024, the denosaurs team. All rights reserved. MIT license.

@@ -81,10 +81,10 @@ export interface Routes<T = {}> {
  * {@link MatchHandler} is called.
  */
 // deno-lint-ignore ban-types
-export type InternalRoute<T = {}> = {
+export interface InternalRoute<T = {}> {
   pattern: RegExp | URLPattern;
   methods: Record<string, MatchHandler<T>>;
-};
+}
 
 /**
  * An array of {@link InternalRoute internal route} objects which the
@@ -293,13 +293,13 @@ export function router<T = unknown>(
 
           if (methods["any"]) {
             return await methods["any"](req, ctx, groups);
-          } else {
-            return await unknownMethodHandler!(
-              req,
-              ctx,
-              Object.keys(methods) as KnownMethod[],
-            );
           }
+
+          return await unknownMethodHandler!(
+            req,
+            ctx,
+            Object.keys(methods) as KnownMethod[],
+          );
         }
       }
 

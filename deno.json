@@ -1,3 +1,9 @@
 {
-  "importMap": "./import_map.json"
+  "name": "@denosaurs/rutt",
+  "version": "0.1.0",
+  "imports": {
+    "https://deno.land/x/rutt/mod.ts": "./mod.ts"
+  },
+  "exports": "./mod.ts"
+  
 }
