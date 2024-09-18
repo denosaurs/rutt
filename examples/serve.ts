@@ -1,4 +1,4 @@
-import { router } from "jsr:@denosaurs/rutt";
+import { router } from "../mod.ts";
 
 export default {
   fetch: router({

@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertIsError } from "jsr:@std/assert@1.0.5";
-import { router } from "jsr:@denosaurs/rutt";
+import { router } from "./mod.ts";
 
 /// @ts-ignore - Deno doesn't have this type
 const TEST_CONN_INFO: Deno.ServeHandlerInfo = {
