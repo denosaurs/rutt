@@ -6,5 +6,4 @@
     "jsr:@denosaurs/rutt": "./mod.ts"
   },
   "exports": "./mod.ts"
-  
 }
