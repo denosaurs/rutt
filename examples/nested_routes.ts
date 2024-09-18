@@ -1,4 +1,4 @@
-import { router } from "https://deno.land/x/rutt/mod.ts";
+import { router } from "../mod.ts";
 
 await Deno.serve(
   router({

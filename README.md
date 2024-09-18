@@ -7,13 +7,26 @@ the web-standard
 provide fast and easy route matching.
 
 ```ts
-import { router } from "https://deno.land/x/rutt/mod.ts";
+import { router } from "jsr:@denosaurs/rutt";
 
 await Deno.serve(
   router({
     "/": (_req) => new Response("Hello world!", { status: 200 }),
   }),
 ).finished;
+```
+
+## Usage with `deno serve`
+
+```ts
+import { router } from "jsr:@denosaurs/rutt";
+
+export default {
+  fetch: router({
+    "/hello/:name": (_req, _, { name }) =>
+      new Response(`Hello ${name}`, { status: 200 }),
+  }),
+};
 ```
 
 ## Projects using `rutt`
@@ -33,4 +46,4 @@ Pull request, issues and feedback are very welcome. Code style is formatted with
 
 ### Licence
 
-Copyright 2022-2023, the denosaurs team. All rights reserved. MIT license.
+Copyright 2022-2024, the denosaurs team. All rights reserved. MIT license.

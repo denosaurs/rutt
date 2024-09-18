@@ -1,10 +1,7 @@
-import {
-  assert,
-  assertEquals,
-  assertIsError,
-} from "https://deno.land/std@0.200.0/assert/mod.ts";
+import { assert, assertEquals, assertIsError } from "jsr:@std/assert@^1";
 import { router } from "./mod.ts";
 
+/// @ts-ignore - Deno doesn't have this type
 const TEST_CONN_INFO: Deno.ServeHandlerInfo = {
   remoteAddr: {
     transport: "tcp",
