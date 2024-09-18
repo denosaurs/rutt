@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertIsError } from "jsr:@std/assert@1.0.5";
+import { assert, assertEquals, assertIsError } from "jsr:@std/assert@^1";
 import { router } from "./mod.ts";
 
 /// @ts-ignore - Deno doesn't have this type
