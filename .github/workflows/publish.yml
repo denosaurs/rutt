@@ -17,7 +17,7 @@ jobs:
       - name: Install Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: canary
+          deno-version: v1.x
 
       - name: Publish package
         run: deno publish
