@@ -2,7 +2,8 @@
   "name": "@denosaurs/rutt",
   "version": "0.1.0",
   "imports": {
-    "https://deno.land/x/rutt/mod.ts": "./mod.ts"
+    "https://deno.land/x/rutt/mod.ts": "./mod.ts",
+    "jsr:@denosaurs/rutt": "./mod.ts"
   },
   "exports": "./mod.ts"
   
